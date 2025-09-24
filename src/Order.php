@@ -8,6 +8,7 @@ namespace JDWX\ACME;
 
 
 use JDWX\ACME\Exceptions\RuntimeException;
+use JDWX\Strict\TypeIs;
 
 
 readonly class Order {
@@ -111,6 +112,20 @@ readonly class Order {
 
     public function isReady() : bool {
         return $this->getStatus() === 'ready';
+    }
+
+
+    public function location() : ?string {
+        return TypeIs::stringOrNull( $this->rOrder[ 'location' ] ?? null );
+    }
+
+
+    public function locationEx() : string {
+        $nst = $this->location();
+        if ( is_string( $nst ) ) {
+            return $nst;
+        }
+        throw new RuntimeException( 'Order has no location.' );
     }
 
 
