@@ -9,6 +9,7 @@ namespace JDWX\ACME;
 
 use JDWX\Json\Json;
 use JDWX\JsonApiClient\Response;
+use JDWX\Result\Result;
 use Jose\Component\Core\JWK;
 use RuntimeException;
 
@@ -58,7 +59,7 @@ class Client {
                     'No identifier in authorization: ' . Json::encode( $rAuth )
                 );
             }
-            if ( ! $rAuth[ 'identifier' ][ 'value' ] == $i_stName ) {
+            if ( $rAuth[ 'identifier' ][ 'value' ] !== $i_stName ) {
                 continue;
             }
             $bWildcardCheck = $rAuth[ 'wildcard' ] ?? false;
@@ -221,6 +222,25 @@ class Client {
         assert( is_string( $stURL ) );
         $x = $this->postSigned( $stURL, [] );
         return ACMEv2::grabBodyJSON( $x );
+    }
+
+
+    /**
+     * @return Result<Order>
+     *
+     * Orders are sometimes return with a location value, which indicates that something is
+     * still in progress. This function will poll the order until it no longer has a location
+     * or until the maximum number of attempts is reached. Not for use in asynchronous code.
+     */
+    public function waitOnOrder( Order $i_order, int $i_nIntervalSeconds = 1, int $i_nMaxAttempts = 30 ) : Result {
+        for ( $ii = 0 ; $ii < $i_nMaxAttempts ; $ii++ ) {
+            if ( ! $i_order->hasLocation() ) {
+                return Result::ok( i_xValue: $i_order );
+            }
+            sleep( $i_nIntervalSeconds );
+            $i_order = $this->order( $i_order );
+        }
+        return Result::err( 'Waiting for order timed out.', i_xValue: $i_order );
     }
 
 
