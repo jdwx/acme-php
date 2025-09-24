@@ -179,7 +179,11 @@ class Client {
     }
 
 
-    public function order( string $i_stURL, ?string $i_nstName = null ) : Order {
+    public function order( string|Order $i_stURL, ?string $i_nstName = null ) : Order {
+        if ( $i_stURL instanceof Order ) {
+            $i_nstName = $i_stURL->name() ?? $i_nstName;
+            $i_stURL = $i_stURL->locationEx();
+        }
         return new Order( $this->postSignedJSON( $i_stURL ), $i_nstName );
     }
 
