@@ -93,6 +93,11 @@ readonly class Order {
     }
 
 
+    public function hasLocation() : bool {
+        return array_key_exists( 'location', $this->rOrder );
+    }
+
+
     public function hasStatus() : bool {
         return array_key_exists( 'status', $this->rOrder );
     }
