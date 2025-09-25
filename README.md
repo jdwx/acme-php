@@ -27,7 +27,7 @@ A command-line utility is provided in
 
 ## Stability
 
-This module has supported the issuance of hundreds of thousands of certificates in production.
+This module has supported the issuance of hundreds of thousands of certificates in production. There are now two independent practical implementations of ACMEv2 certificate issuance based on this module in production use.
 
 ## History
 
