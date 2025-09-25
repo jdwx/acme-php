@@ -181,6 +181,9 @@ class Client {
 
     public function order( string|Order $i_stURL, ?string $i_nstName = null ) : Order {
         if ( $i_stURL instanceof Order ) {
+            if ( ! $i_stURL->hasLocation() ) {
+                return $i_stURL;
+            }
             $i_nstName = $i_stURL->name() ?? $i_nstName;
             $i_stURL = $i_stURL->locationEx();
         }
