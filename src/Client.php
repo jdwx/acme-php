@@ -102,8 +102,7 @@ class Client {
     }
 
 
-    /** @return mixed[] */
-    public function finalize( Order $i_order, string $i_csr ) : array {
+    public function finalize( Order $i_order, string $i_csr ) : Order {
         if ( ! $i_order->isReady() ) {
             $stStatus = $i_order->getStatus();
             throw new RuntimeException( "Order status is {$stStatus} not ready" );
@@ -111,7 +110,7 @@ class Client {
         $stURL = $i_order->getFinalizeURLEx();
         $rData = [ 'csr' => Certificate::exportCSR( $i_csr ) ];
         $stResponse = $this->postSigned( $stURL, $rData );
-        return ACMEv2::grabBodyJSON( $stResponse );
+        return new Order( ACMEv2::grabBodyJSON( $stResponse ), $i_order->name() );
     }
 
 
