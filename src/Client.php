@@ -59,7 +59,7 @@ class Client {
                     'No identifier in authorization: ' . Json::encode( $rAuth )
                 );
             }
-            if ( $rAuth[ 'identifiers' ][ 'value' ] !== $i_stName ) {
+            if ( $rAuth[ 'identifier' ][ 'value' ] !== $i_stName ) {
                 continue;
             }
             $bWildcardCheck = $rAuth[ 'wildcard' ] ?? false;
