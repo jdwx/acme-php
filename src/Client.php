@@ -50,7 +50,7 @@ class Client {
         $rAuths = [];
         $bWildcard = false;
         if ( str_starts_with( $i_stName, '*.' ) ) {
-            $i_stName = substr( $i_stName, 1 );
+            $i_stName = substr( $i_stName, 2 );
             $bWildcard = true;
         }
         foreach ( $this->authorizations( $i_order ) as $rAuth ) {
