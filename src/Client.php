@@ -59,7 +59,7 @@ class Client {
                     'No identifier in authorization: ' . Json::encode( $rAuth )
                 );
             }
-            if ( $rAuth[ 'identifier' ][ 'value' ] !== $i_stName ) {
+            if ( $rAuth[ 'identifiers' ][ 'value' ] !== $i_stName ) {
                 continue;
             }
             $bWildcardCheck = $rAuth[ 'wildcard' ] ?? false;
@@ -230,7 +230,10 @@ class Client {
      *
      * Orders are sometimes return with a location value, which indicates that something is
      * still in progress. This function will poll the order until it no longer has a location
-     * or until the maximum number of attempts is reached. Not for use in asynchronous code.
+     * or until the maximum number of attempts is reached.
+     *
+     * This is a helper for simple scripts. It's not for use in asynchronous or
+     * high-volume scenarios!
      */
     public function waitOnOrder( Order $i_order, int $i_nIntervalSeconds = 1, int $i_nMaxAttempts = 30 ) : Result {
         for ( $ii = 0 ; $ii < $i_nMaxAttempts ; $ii++ ) {
