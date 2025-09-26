@@ -45,6 +45,7 @@ final class JWT {
             }
             openssl_pkey_export( $key, $st );
             file_put_contents( $i_stPrivateKeyPath, $st );
+            chmod( $i_stPrivateKeyPath, 0600 );
         }
 
         return JWKFactory::createFromKeyFile( $i_stPrivateKeyPath );
