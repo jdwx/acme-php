@@ -18,6 +18,12 @@ readonly class Order {
     public function __construct( private array $rOrder, private ?string $nstName = null ) {}
 
 
+    /** @return mixed[] */
+    public function data() : array {
+        return $this->rOrder;
+    }
+
+
     /** @return list<string> */
     public function getAuthorizationURLs() : array {
         /** @phpstan-ignore-next-line */
