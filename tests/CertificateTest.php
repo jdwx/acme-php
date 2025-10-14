@@ -5,6 +5,7 @@ declare( strict_types = 1 );
 
 
 use JDWX\ACME\Certificate;
+use JDWX\ACME\KeyType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -38,11 +39,22 @@ final class CertificateTest extends TestCase {
     }
 
 
-    public function testMakeKey() : void {
-        $key = Certificate::makeKey();
-        /** @noinspection PhpConditionAlreadyCheckedInspection */
-        /** @noinspection UnnecessaryAssertionInspection */
-        self::assertInstanceOf( OpenSSLAsymmetricKey::class, $key );
+    public function testMakeKeyForEC() : void {
+        /** @noinspection PhpRedundantOptionalArgumentInspection */
+        $key = Certificate::makeKey( KeyType::EC );
+        $details = openssl_pkey_get_details( $key );
+        self::assertIsArray( $details );
+        self::assertArrayHasKey( 'ec', $details );
+        self::assertArrayHasKey( 'curve_name', $details[ 'ec' ] );
+    }
+
+
+    public function testMakeKeyForRSA() : void {
+        $key = Certificate::makeKey( KeyType::RSA );
+        $details = openssl_pkey_get_details( $key );
+        self::assertIsArray( $details );
+        self::assertArrayHasKey( 'rsa', $details );
+        self::assertArrayHasKey( 'n', $details[ 'rsa' ] );
     }
 
 
