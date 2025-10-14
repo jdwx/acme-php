@@ -275,7 +275,7 @@ EOL;
     }
 
 
-    public static function makeKey() : OpenSSLAsymmetricKey {
+    public static function makeECKey() : OpenSSLAsymmetricKey {
         /** @noinspection SpellCheckingInspection */
         $res = openssl_pkey_new( [
             'private_key_type' => OPENSSL_KEYTYPE_EC,
@@ -286,6 +286,11 @@ EOL;
             throw new RuntimeException( 'Failed to create key' );
         }
         return $res;
+    }
+    
+
+    public static function makeKey() : OpenSSLAsymmetricKey {
+        return self::makeECKey();
     }
 
 
@@ -320,6 +325,19 @@ EOL;
         $crt = is_string( $i_stCertFile ) ? self::readChain( $i_stCertFile )[ 0 ] : null;
         $rChain = is_string( $i_stChainFile ) ? self::readChain( $i_stChainFile ) : [];
         return self::makePEM( $key, $crt, $rChain );
+    }
+
+
+    public static function makeRSAKey( int $i_uBits = 4096 ) : OpenSSLAsymmetricKey {
+        $res = openssl_pkey_new( [
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            'private_key_bits' => $i_uBits,
+            'digest_alg' => 'sha384',
+        ] );
+        if ( $res === false ) {
+            throw new RuntimeException( 'Failed to create key' );
+        }
+        return $res;
     }
 
 
