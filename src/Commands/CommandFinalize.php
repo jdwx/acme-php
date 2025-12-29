@@ -10,6 +10,7 @@ namespace JDWX\ACME\Commands;
 use JDWX\ACME\Arguments;
 use JDWX\ACME\Certificate;
 use JDWX\ACME\Command;
+use JDWX\ACME\KeyType;
 use JDWX\Json\Json;
 
 
@@ -20,7 +21,7 @@ class CommandFinalize extends Command {
 
     protected const string HELP    = 'Finalize an order.';
 
-    protected const string USAGE   = 'finalize <host-name>';
+    protected const string USAGE   = 'finalize <host-name> [ec|rsa]';
 
 
     protected function run( Arguments $args ) : void {
@@ -28,13 +29,14 @@ class CommandFinalize extends Command {
         $stName = $order->nameEx();
         $args->end();
         $rNames = $order->getNames();
+        $stType = $args->shiftKeyword( [ 'ec', 'rsa' ] ) ?? 'ec';
 
         $stPrivateKeyFile = $this->cfgGet( 'certs-dir' )->asString() . "/{$stName}.key";
         if ( file_exists( $stPrivateKeyFile ) ) {
             $key = Certificate::readKeyPrivate( $stPrivateKeyFile );
             echo "Loaded key.\n";
         } else {
-            $key = Certificate::makeKey();
+            $key = Certificate::makeKey( $stType === 'rsa' ? KeyType::RSA : KeyType::EC );
             Certificate::writeKeyPrivate( $stPrivateKeyFile, $key );
             echo "Created key.\n";
         }
