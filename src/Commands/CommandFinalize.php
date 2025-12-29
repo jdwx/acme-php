@@ -27,9 +27,9 @@ class CommandFinalize extends Command {
     protected function run( Arguments $args ) : void {
         $order = $args->shiftOrderEx();
         $stName = $order->nameEx();
+        $stType = $args->shiftKeyword( [ 'ec', 'rsa' ] ) ?? 'ec';
         $args->end();
         $rNames = $order->getNames();
-        $stType = $args->shiftKeyword( [ 'ec', 'rsa' ] ) ?? 'ec';
 
         $stPrivateKeyFile = $this->cfgGet( 'certs-dir' )->asString() . "/{$stName}.key";
         if ( file_exists( $stPrivateKeyFile ) ) {
