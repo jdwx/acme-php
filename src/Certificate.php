@@ -7,6 +7,7 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
+use JDWX\Strict\OK;
 use OpenSSLAsymmetricKey;
 use OpenSSLCertificate;
 use OpenSSLCertificateSigningRequest;
@@ -19,21 +20,10 @@ final class Certificate {
 
     /** @param OpenSSLCertificate[] $i_certs */
     public static function byName( array $i_certs, string $i_stName ) : ?OpenSSLCertificate {
-        $rAllNames = [];
         foreach ( $i_certs as $crt ) {
-            $rNames = self::getNames( $crt );
-            if ( in_array( $i_stName, $rNames ) ) {
+            if ( self::matchName( $i_stName, self::getNames( $crt ) ) ) {
                 return $crt;
             }
-            foreach ( $rNames as $stName ) {
-                if ( str_starts_with( $stName, '*.' ) ) {
-                    $stWild = substr( $stName, 1 );
-                    if ( str_ends_with( $i_stName, $stWild ) ) {
-                        return $crt;
-                    }
-                }
-            }
-            $rAllNames = array_merge( $rAllNames, $rNames );
         }
         return null;
     }
@@ -246,7 +236,7 @@ EOL;
         if ( ! is_string( $tempFile ) ) {
             throw new RuntimeException( 'Failed to create temporary file' );
         }
-        file_put_contents( $tempFile, $tempConf );
+        OK::file_put_contents( $tempFile, $tempConf );
         set_error_handler( null );
         $csr = openssl_csr_new( [
             'ST' => 'United States',
@@ -341,6 +331,35 @@ EOL;
         $crt = is_string( $i_stCertFile ) ? self::readChain( $i_stCertFile )[ 0 ] : null;
         $rChain = is_string( $i_stChainFile ) ? self::readChain( $i_stChainFile ) : [];
         return self::makePEM( $key, $crt, $rChain );
+    }
+
+
+    /**
+     * @param string $i_stCheckName
+     * @param list<string>|string $i_rCertificateNames
+     * @return bool
+     */
+    public static function matchName( string $i_stCheckName, array|string $i_rCertificateNames ) : bool {
+        if ( is_string( $i_rCertificateNames ) ) {
+            $i_rCertificateNames = [ $i_rCertificateNames ];
+        }
+        $i_stCheckName = strtolower( $i_stCheckName );
+        foreach ( $i_rCertificateNames as $stName ) {
+            $stName = strtolower( $stName );
+            $stCheckName = $i_stCheckName;
+            if ( str_starts_with( $stName, '*.' ) ) {
+                $stName = substr( $stName, 2 );
+                $uDotPos = strpos( $stCheckName, '.' );
+                if ( $uDotPos === false ) {
+                    continue;
+                }
+                $stCheckName = substr( $stCheckName, $uDotPos + 1 );
+            }
+            if ( $stCheckName === $stName ) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -496,24 +515,21 @@ EOL;
     public static function writeCSR( string $i_stFileName, string $i_csr ) : void {
         $stCSR = '';
         openssl_csr_export( $i_csr, $stCSR );
-        file_put_contents( $i_stFileName, $stCSR );
+        OK::file_put_contents( $i_stFileName, $stCSR );
     }
 
 
     /** @param list<OpenSSLCertificate>|OpenSSLCertificate|string $i_cert */
     public static function writeChain( string $i_stFileName, array|string|OpenSSLCertificate $i_cert ) : void {
         $i_cert = self::toString( $i_cert );
-        file_put_contents( $i_stFileName, $i_cert );
+        OK::file_put_contents( $i_stFileName, $i_cert );
     }
 
 
     public static function writeKeyPrivate( string $i_stFileName, OpenSSLAsymmetricKey $i_key ) : void {
         $stKey = '';
         openssl_pkey_export( $i_key, $stKey );
-        $b = file_put_contents( $i_stFileName, $stKey );
-        if ( false === $b ) {
-            throw new RuntimeException( "Unable to write keyfile {$i_stFileName}" );
-        }
+        OK::file_put_contents( $i_stFileName, $stKey );
     }
 
 

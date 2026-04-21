@@ -65,6 +65,18 @@ final class CertificateTest extends TestCase {
     }
 
 
+    public function testMatchName() : void {
+        self::assertTrue( Certificate::matchName( 'example.org', 'example.org' ) );
+        self::assertFalse( Certificate::matchName( 'example.org', 'example.com' ) );
+        self::assertTrue( Certificate::matchName( 'www.example.org', [ 'example.org', 'www.example.org' ] ) );
+        self::assertFalse( Certificate::matchName( 'www.example.org', [ 'example.org', 'www.example.com' ] ) );
+        self::assertFalse( Certificate::matchName( 'www.example.org', [ 'example.org', 'foo.example.com' ] ) );
+        self::assertTrue( Certificate::matchName( 'foo.example.org', '*.example.org' ) );
+        self::assertTrue( Certificate::matchName( 'foo.example.org', [ 'example.org', '*.example.org' ] ) );
+        self::assertFalse( Certificate::matchName( 'foo.bar.example.org', [ 'example.org', '*.example.org' ] ) );
+    }
+
+
     public function testPEMFiles() : void {
         $pair = $this->makePair( 'file-test' );
         $stKeyFile = tempnam( sys_get_temp_dir(), 'key' );
