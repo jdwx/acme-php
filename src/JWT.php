@@ -8,6 +8,7 @@ namespace JDWX\ACME;
 
 
 use JDWX\Json\Json;
+use JDWX\Strict\TypeIs;
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
@@ -52,6 +53,27 @@ final class JWT {
     }
 
 
+    /**
+     * @param string $i_stContent
+     * @return bool True if the content is correctly formed and signed by the key it
+     *              claims to be signed by.
+     * @throws \JsonException
+     */
+    public static function isConsistent( string $i_stContent ) : bool {
+        $r = Json::decodeDict( $i_stContent );
+        if ( ! isset( $r[ 'protected' ] ) ) {
+            throw new RuntimeException( 'No protected header' );
+        }
+        $stProtected = $r[ 'protected' ];
+        $rProtected = Base64Url::decodeJSON( TypeIs::string( $stProtected ) );
+        $jwk = $rProtected[ 'jwk' ];
+        if ( ! is_array( $jwk ) ) {
+            throw new RuntimeException( 'No JWK in protected header' );
+        }
+        return self::verify( $i_stContent, $jwk );
+    }
+
+
     /** @param mixed[]|null $i_nrPayload */
     public static function sign( JWK    $i_jwk, string $i_stURL, string $i_stNonce,
                                  ?array $i_nrPayload = null, ?string $i_kid = null ) : string {
@@ -90,7 +112,11 @@ final class JWT {
     }
 
 
-    public static function verify( string $i_stContent ) : bool {
+    /** @param mixed[]|JWK $i_jwk */
+    public static function verify( string $i_stContent, array|JWK $i_jwk ) : bool {
+        if ( is_array( $i_jwk ) ) {
+            $i_jwk = new JWK( $i_jwk );
+        }
         $r = Json::decodeDict( $i_stContent );
         $stProtected = $r[ 'protected' ];
         assert( is_string( $stProtected ) );
@@ -100,18 +126,11 @@ final class JWT {
         assert( is_string( $stSignature ) );
         $stToken = $stProtected . '.' . $stPayload . '.' . $stSignature;
 
-        $rProtected = Base64Url::decodeJSON( $stProtected );
-        $jwk = $rProtected[ 'jwk' ];
-        if ( ! is_array( $jwk ) ) {
-            throw new RuntimeException( 'No JWK in protected header' );
-        }
-        $jwk = new JWK( $jwk );
-
         $algorithmManager = new AlgorithmManager( [ new ES384() ] );
         $jwsVerifier = new JWSVerifier( $algorithmManager );
         $serializeManager = new JWSSerializerManager( [ new CompactSerializer() ] );
         $jws = $serializeManager->unserialize( $stToken );
-        return $jwsVerifier->verifyWithKey( $jws, $jwk, 0 );
+        return $jwsVerifier->verifyWithKey( $jws, $i_jwk, 0 );
     }
 
 
