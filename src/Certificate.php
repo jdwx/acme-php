@@ -526,10 +526,44 @@ EOL;
     }
 
 
-    public static function writeKeyPrivate( string $i_stFileName, OpenSSLAsymmetricKey $i_key ) : void {
+    /** @noinspection PhpUsageOfSilenceOperatorInspection */
+    public static function writeKeyPrivate( string $i_stFileName, OpenSSLAsymmetricKey $i_key,
+                                            bool   $i_bAllowOverwrite = false ) : void {
+        if ( file_exists( $i_stFileName ) || is_link( $i_stFileName ) ) {
+            if ( ! $i_bAllowOverwrite ) {
+                throw new RuntimeException( "Refusing to overwrite existing private key file {$i_stFileName}" );
+            }
+            @unlink( $i_stFileName );
+        }
+
+        $uOldUmask = umask( 0077 );
+        try {
+            $f = fopen( $i_stFileName, 'xb' );
+            if ( $f === false ) {
+                throw new RuntimeException( "Failed to open keyfile for write {$i_stFileName}" );
+            }
+            chmod( $i_stFileName, 0600 ); # Belt and suspenders.
+        } finally {
+            umask( $uOldUmask );
+        }
+
+        /** @phpstan-ignore-next-line */
+        assert( isset( $f ) );
         $stKey = '';
-        openssl_pkey_export( $i_key, $stKey );
-        OK::file_put_contents( $i_stFileName, $stKey );
+        if ( ! openssl_pkey_export( $i_key, $stKey ) ) {
+            fclose( $f );
+            @unlink( $i_stFileName );
+            throw new RuntimeException( "Failed to export private key for {$i_stFileName}" );
+        }
+        if ( false === fwrite( $f, $stKey ) ) {
+            fclose( $f );
+            @unlink( $i_stFileName );
+            throw new RuntimeException( "Failed to write private keyfile {$i_stFileName}" );
+        }
+        if ( ! fclose( $f ) ) {
+            @unlink( $i_stFileName );
+            throw new RuntimeException( "Failed to close private keyfile {$i_stFileName}" );
+        }
     }
 
 
