@@ -7,6 +7,7 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
+use JDWX\Param\Validate;
 use JDWX\Strict\OK;
 use OpenSSLAsymmetricKey;
 use OpenSSLCertificate;
@@ -230,6 +231,9 @@ subjectAltName = @alt_names
 
 EOL;
         foreach ( $i_rNames as $i => $stName ) {
+            if ( ! Validate::hostname( $stName ) ) {
+                throw new RuntimeException( "Invalid hostname: {$stName}" );
+            }
             $tempConf .= "DNS.$i = $stName\n";
         }
         $tempFile = tempnam( sys_get_temp_dir(), 'csr_' );

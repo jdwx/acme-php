@@ -20,7 +20,7 @@ final class CertificateTest extends TestCase {
 
 
     public function testBase64Url() : void {
-        $pair = $this->makePair( 'test' );
+        $pair = $this->makePair( 'test.example.org' );
         assert( $pair->crt instanceof OpenSSLCertificate );
         $st = Certificate::toBase64Url( $pair->crt );
         $crt = Certificate::fromBase64Url( $st );
@@ -29,7 +29,7 @@ final class CertificateTest extends TestCase {
 
 
     public function testKeyToString() : void {
-        $pair = $this->makePair( 'test' );
+        $pair = $this->makePair( 'test.example.org' );
         openssl_pkey_export( $pair->key, $st );
         $stActual = trim( $st );
         $stCheck = trim( Certificate::keyToString( $pair->key ) );
@@ -59,7 +59,7 @@ final class CertificateTest extends TestCase {
 
 
     public function testMakePEMForNoCertificate() : void {
-        $pair = $this->makePair( 'test' );
+        $pair = $this->makePair( 'test.example.org' );
         $this->expectException( RuntimeException::class );
         Certificate::makePEM( $pair->key );
     }
@@ -78,13 +78,13 @@ final class CertificateTest extends TestCase {
 
 
     public function testPEMFiles() : void {
-        $pair = $this->makePair( 'file-test' );
+        $pair = $this->makePair( 'file-test.example.org' );
         $stKeyFile = tempnam( sys_get_temp_dir(), 'key' );
         $stCrtFile = tempnam( sys_get_temp_dir(), 'crt' );
         $stChainFile = tempnam( sys_get_temp_dir(), 'chn' );
 
         # Try with the cert and chain in separate files.
-        Certificate::writeKeyPrivate( $stKeyFile, $pair->key );
+        Certificate::writeKeyPrivate( $stKeyFile, $pair->key, true );
         Certificate::writeChain( $stCrtFile, $pair->crt );
         Certificate::writeChain( $stChainFile, $this->caCrt );
         $stPEM = Certificate::makePEMFromFiles( $stKeyFile, $stCrtFile, $stChainFile );
@@ -118,7 +118,7 @@ final class CertificateTest extends TestCase {
 
 
     public function testPEMStrings() : void {
-        $pair = $this->makePair( 'test' );
+        $pair = $this->makePair( 'test.example.org' );
         $st = Certificate::makePEM( $pair->key, $pair->crt, $this->caCrt );
         $pem = Certificate::parsePEM( $st );
         self::assertInstanceOf( OpenSSLAsymmetricKey::class, $pem->key );
@@ -139,7 +139,7 @@ final class CertificateTest extends TestCase {
 
 
     public function testToString() : void {
-        $pair = $this->makePair( 'test' );
+        $pair = $this->makePair( 'test.example.org' );
         $stExpected = trim( openssl_x509_export( $pair->crt, $st ) ? $st : '' );
         self::assertSame( $stExpected, trim( Certificate::toString( $pair->crt ) ) );
         self::assertSame( $stExpected, trim( Certificate::toString( $stExpected ) ) );
@@ -173,7 +173,7 @@ final class CertificateTest extends TestCase {
 
     private function makeSelfSignedCert() : stdClass {
         $key = Certificate::makeKey();
-        $csr = Certificate::makeCSR( $key, [ 'test-ca' ] );
+        $csr = Certificate::makeCSR( $key, [ 'test-ca.example.org' ] );
         $crt = Certificate::signCSR( $key, $csr, 2 );
         $x = new stdClass();
         $x->key = $key;
