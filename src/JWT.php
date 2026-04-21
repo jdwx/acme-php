@@ -17,7 +17,6 @@ use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use Jose\Component\Signature\Serializer\JWSSerializerManager;
-use OpenSSLAsymmetricKey;
 use RuntimeException;
 
 
@@ -31,24 +30,8 @@ final class JWT {
 
     public static function getOrCreateKey( string $i_stPrivateKeyPath ) : JWK {
         if ( ! file_exists( $i_stPrivateKeyPath ) ) {
-
-            # Generate an EC-384 key
-            /** @noinspection SpellCheckingInspection */
-            $config = [
-                'digest_alg' => 'sha384',
-                'private_key_bits' => 384,
-                'private_key_type' => OPENSSL_KEYTYPE_EC,
-                'curve_name' => 'secp384r1',
-            ];
-            $key = openssl_pkey_new( $config );
-            if ( ! $key instanceof OpenSSLAsymmetricKey ) {
-                throw new RuntimeException( 'Failed to generate key' );
-            }
-            openssl_pkey_export( $key, $st );
-            file_put_contents( $i_stPrivateKeyPath, $st );
-            chmod( $i_stPrivateKeyPath, 0600 );
+            Certificate::writeKeyPrivate( $i_stPrivateKeyPath, Certificate::makeKeyEC() );
         }
-
         return JWKFactory::createFromKeyFile( $i_stPrivateKeyPath );
     }
 
