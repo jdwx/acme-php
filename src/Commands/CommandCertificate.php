@@ -9,6 +9,7 @@ namespace JDWX\ACME\Commands;
 
 use JDWX\ACME\Command;
 use JDWX\Args\Arguments;
+use JDWX\Strict\OK;
 
 
 class CommandCertificate extends Command {
@@ -35,7 +36,7 @@ class CommandCertificate extends Command {
         if ( file_exists( $stCertFile ) ) {
             echo "Certificate already exists.\n";
         } else {
-            file_put_contents( $stCertFile, $rCert );
+            OK::file_put_contents( $stCertFile, $rCert );
             echo "Wrote certificate to {$stCertFile}.\n";
         }
         echo $rCert, "\n";
