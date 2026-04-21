@@ -25,9 +25,8 @@ class CommandRevoke extends Command {
         $order = $args->shiftOrderEx();
         $uRevocationCode = $args->shiftRevocationReason() ?? 0;
         $args->end();
-        $st = $this->client->revoke( $order, $uRevocationCode );
-        /** @noinspection ForgottenDebugOutputInspection */
-        var_dump( $st );
+        $rsp = $this->client->revoke( $order, $uRevocationCode );
+        echo $rsp->__toString(), "\n";
     }
 
 
