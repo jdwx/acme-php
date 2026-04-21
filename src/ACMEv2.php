@@ -55,22 +55,6 @@ final class ACMEv2 {
     }
 
 
-    public static function grabBody( string $i_stResponse ) : string {
-        $r = explode( "\r\n", $i_stResponse );
-        $stBody = '';
-        $bBody = false;
-        foreach ( $r as $stLine ) {
-            if ( $bBody ) {
-                $stBody .= $stLine;
-            }
-            if ( '' === $stLine ) {
-                $bBody = true;
-            }
-        }
-        return $stBody;
-    }
-
-
     public static function grabBodyCertificate( Response $i_rsp ) : string {
         if ( ! $i_rsp->isContentTypeLoose( 'application', 'pem-certificate-chain' ) ) {
             throw new InvalidArgumentException( 'Response is not a certificate: ' . $i_rsp );
@@ -85,29 +69,6 @@ final class ACMEv2 {
             throw new InvalidArgumentException( 'Response is not JSON: ' . $i_rsp );
         }
         return Json::expectDict( $i_rsp->json() );
-    }
-
-
-    public static function grabHeader( string $i_stResponse, string $i_stHeader ) : ?string {
-        $r = explode( "\r\n", $i_stResponse );
-        foreach ( $r as $stLine ) {
-            if ( trim( $stLine ) === '' ) {
-                return null;
-            }
-            if ( str_starts_with( $stLine, 'HTTP/' ) ) {
-                continue;
-            }
-            $s = explode( ':', $stLine, 2 );
-            if ( 2 !== count( $s ) ) {
-                return null;
-            }
-            $stHeader = strtolower( trim( $s[ 0 ] ) );
-            if ( $stHeader !== $i_stHeader ) {
-                continue;
-            }
-            return trim( $s[ 1 ] );
-        }
-        return null;
     }
 
 
