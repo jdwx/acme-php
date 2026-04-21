@@ -137,16 +137,16 @@ class Interpreter extends \JDWX\CLI\Interpreter {
     /** @param list<string> $i_rNames */
     public function saveOrder( array $i_rNames, string $i_stURL ) : void {
         $r = $this->loadOrders();
-        var_dump( $r );
+        $this->debug( Json::encodePretty( $r ) );
         foreach ( $i_rNames as $stName ) {
             $r[ $stName ] = $i_stURL;
         }
-        file_put_contents( $this->stOrderStatePath, Json::encode( $r ) );
+        OK::file_put_contents( $this->stOrderStatePath, Json::encode( $r ) );
     }
 
 
     protected function handleException( Exception $i_ex ) : ?int {
-        var_dump( $i_ex );
+        $this->error( strval( $i_ex ) );
         return 10;
     }
 
