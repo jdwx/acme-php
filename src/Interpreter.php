@@ -66,6 +66,7 @@ class Interpreter extends \JDWX\CLI\Interpreter {
         $this->addCommandClass( Commands\CommandNewOrder::class );
         $this->addCommandClass( Commands\CommandOrder::class );
         $this->addCommandClass( Commands\CommandRevoke::class );
+        $this->addCommandClass( Commands\CommandRollover::class );
         $this->addCommandClass( Commands\CommandUpdate::class );
         $this->addCommandClass( Commands\CommandValidate::class );
     }
