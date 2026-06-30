@@ -8,13 +8,13 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
-use InvalidArgumentException;
 use JDWX\ACME\Exceptions\AccountDoesNotExistException;
 use JDWX\ACME\Exceptions\ACMEException;
 use JDWX\ACME\Exceptions\AlreadyRevokedException;
 use JDWX\ACME\Exceptions\BadNonceException;
 use JDWX\ACME\Exceptions\BadRevocationReason;
 use JDWX\ACME\Exceptions\CAAException;
+use JDWX\ACME\Exceptions\InvalidArgumentException;
 use JDWX\ACME\Exceptions\MalformedException;
 use JDWX\ACME\Exceptions\RateLimitException;
 use JDWX\ACME\Exceptions\RuntimeException;
@@ -28,6 +28,20 @@ use Jose\Component\Core\JWK;
 
 
 final class ACMEv2 {
+
+
+    public const array REVOCATION_REASONS = [
+        'unspecified' => 0,
+        'keycompromise' => 1,
+        'cacompromise' => 2,
+        'affiliationchanged' => 3,
+        'superseded' => 4,
+        'cessationofoperation' => 5,
+        'certificatehold' => 6,
+        'removefromcrl' => 8,
+        'privilegewithdrawn' => 9,
+        'aacompromise' => 10,
+    ];
 
 
     /** @const list<string> */
@@ -95,22 +109,19 @@ final class ACMEv2 {
 
 
     public static function revocationReasonStringToCode( string $i_stReason ) : int {
+        if ( is_numeric( $i_stReason ) ) {
+            $uReason = intval( $i_stReason );
+            if ( in_array( $uReason, self::REVOCATION_REASONS ) ) {
+                return $uReason;
+            }
+            throw new InvalidArgumentException( "Unknown revocation reason: {$i_stReason}" );
+        }
         $st = strtolower( $i_stReason );
         $st = str_replace( [ '-', ' ' ], '', $st );
-        /** @noinspection SpellCheckingInspection */
-        return match ( $st ) {
-            'unspecified', '0' => 0,
-            'keycompromise', '1' => 1,
-            'cacompromise', '2' => 2,
-            'affiliationchanged', '3' => 3,
-            'superseded', '4' => 4,
-            'cessationofoperation', '5' => 5,
-            'certificatehold', '6' => 6,
-            'removefromcrl', '8' => 8,
-            'privilegewithdrawn', '9' => 9,
-            'aacompromise', '10' => 10,
-            default => throw new RuntimeException( "Unknown revocation reason: {$i_stReason}" ),
-        };
+        if ( array_key_exists( $st, self::REVOCATION_REASONS ) ) {
+            return self::REVOCATION_REASONS[ $st ];
+        }
+        throw new InvalidArgumentException( "Unknown revocation reason: {$i_stReason}" );
     }
 
 
@@ -226,9 +237,9 @@ final class ACMEv2 {
 
 
     /**
-     * @param string $i_stMethod
-     * @param string $i_stURL
-     * @param string|null $i_nstBody
+     * @param string                $i_stMethod
+     * @param string                $i_stURL
+     * @param string|null           $i_nstBody
      * @param array<string, string> $i_rHeaders
      * @return Response
      */
