@@ -7,7 +7,7 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
-use JDWX\ACME\Exceptions\RuntimeException;
+use JDWX\Args\MissingArgumentException;
 
 
 class Arguments extends \JDWX\Args\Arguments {
@@ -29,7 +29,7 @@ class Arguments extends \JDWX\Args\Arguments {
         if ( is_string( $nstType ) ) {
             return $nstType;
         }
-        throw new RuntimeException( 'Challenge type required.' );
+        throw new MissingArgumentException( 'Challenge type required.' );
     }
 
 
@@ -47,7 +47,7 @@ class Arguments extends \JDWX\Args\Arguments {
         if ( $nOrder instanceof Order ) {
             return $nOrder;
         }
-        throw new RuntimeException( 'Order not found' );
+        throw new MissingArgumentException( 'Order is required' );
     }
 
 
