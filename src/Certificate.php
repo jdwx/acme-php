@@ -8,7 +8,6 @@ namespace JDWX\ACME;
 
 
 use JDWX\Param\Validate;
-use JDWX\Strict\OK;
 use OpenSSLAsymmetricKey;
 use OpenSSLCertificate;
 use OpenSSLCertificateSigningRequest;
@@ -240,7 +239,7 @@ EOL;
         if ( ! is_string( $tempFile ) ) {
             throw new RuntimeException( 'Failed to create temporary file' );
         }
-        OK::file_put_contents( $tempFile, $tempConf );
+        IOHelper::writeFile( $tempFile, $tempConf, 0600, true );
         set_error_handler( null );
         $csr = openssl_csr_new( [
             'ST' => 'United States',
@@ -419,39 +418,24 @@ EOL;
 
 
     public static function readCSR( string $i_stFileName ) : string {
-        $st = file_get_contents( $i_stFileName );
-        if ( ! is_string( $st ) ) {
-            throw new RuntimeException( 'Failed to read CSR' );
-        }
-        return $st;
+        return IOHelper::readFile( $i_stFileName );
     }
 
 
     /** @return list<OpenSSLCertificate> All the (matching) certificates in the input file. */
     public static function readChain( string $i_stFileName, ?string $i_nstCN = null ) : array {
-        $stCert = file_get_contents( $i_stFileName );
-        if ( ! is_string( $stCert ) ) {
-            throw new RuntimeException( "Failed to read certificate chain {$i_stFileName}" );
-        }
+        $stCert = IOHelper::readFile( $i_stFileName );
         return self::parseChain( $stCert, $i_nstCN );
     }
 
 
     public static function readKeyPrivate( string $i_stFileName ) : OpenSSLAsymmetricKey {
-        $stKey = file_get_contents( $i_stFileName );
-        if ( ! is_string( $stKey ) ) {
-            throw new RuntimeException( "Failed to read keyfile {$i_stFileName}" );
-        }
-        return self::keyFromString( $stKey );
+        return self::keyFromString( IOHelper::readFile( $i_stFileName ) );
     }
 
 
     public static function readPEM( string $i_stFileName ) : stdClass {
-        $stPEM = file_get_contents( $i_stFileName );
-        if ( ! is_string( $stPEM ) ) {
-            throw new RuntimeException( "Failed to read PEM file {$i_stFileName}" );
-        }
-        return self::parsePEM( $stPEM );
+        return self::parsePEM( IOHelper::readFile( $i_stFileName ) );
     }
 
 
@@ -519,55 +503,24 @@ EOL;
     public static function writeCSR( string $i_stFileName, string $i_csr ) : void {
         $stCSR = '';
         openssl_csr_export( $i_csr, $stCSR );
-        OK::file_put_contents( $i_stFileName, $stCSR );
+        IOHelper::writeFile( $i_stFileName, $stCSR, 0600, true );
     }
 
 
     /** @param list<OpenSSLCertificate>|OpenSSLCertificate|string $i_cert */
     public static function writeChain( string $i_stFileName, array|string|OpenSSLCertificate $i_cert ) : void {
         $i_cert = self::toString( $i_cert );
-        OK::file_put_contents( $i_stFileName, $i_cert );
+        IOHelper::writeFile( $i_stFileName, $i_cert, 0600, true );
     }
 
 
-    /** @noinspection PhpUsageOfSilenceOperatorInspection */
     public static function writeKeyPrivate( string $i_stFileName, OpenSSLAsymmetricKey $i_key,
                                             bool   $i_bAllowOverwrite = false ) : void {
-        if ( file_exists( $i_stFileName ) || is_link( $i_stFileName ) ) {
-            if ( ! $i_bAllowOverwrite ) {
-                throw new RuntimeException( "Refusing to overwrite existing private key file {$i_stFileName}" );
-            }
-            @unlink( $i_stFileName );
-        }
-
-        $uOldUmask = umask( 0077 );
-        try {
-            $f = fopen( $i_stFileName, 'xb' );
-            if ( $f === false ) {
-                throw new RuntimeException( "Failed to open keyfile for write {$i_stFileName}" );
-            }
-            chmod( $i_stFileName, 0600 ); # Belt and suspenders.
-        } finally {
-            umask( $uOldUmask );
-        }
-
-        /** @phpstan-ignore-next-line */
-        assert( isset( $f ) );
         $stKey = '';
         if ( ! openssl_pkey_export( $i_key, $stKey ) ) {
-            fclose( $f );
-            @unlink( $i_stFileName );
             throw new RuntimeException( "Failed to export private key for {$i_stFileName}" );
         }
-        if ( false === fwrite( $f, $stKey ) ) {
-            fclose( $f );
-            @unlink( $i_stFileName );
-            throw new RuntimeException( "Failed to write private keyfile {$i_stFileName}" );
-        }
-        if ( ! fclose( $f ) ) {
-            @unlink( $i_stFileName );
-            throw new RuntimeException( "Failed to close private keyfile {$i_stFileName}" );
-        }
+        IOHelper::writeFile( $i_stFileName, $stKey, 0600, $i_bAllowOverwrite );
     }
 
 

@@ -8,8 +8,8 @@ namespace JDWX\ACME\Commands;
 
 
 use JDWX\ACME\Command;
+use JDWX\ACME\IOHelper;
 use JDWX\Args\Arguments;
-use JDWX\Strict\OK;
 
 
 class CommandCertificate extends Command {
@@ -23,7 +23,7 @@ class CommandCertificate extends Command {
 
 
     protected function run( Arguments $args ) : void {
-        $stName = $args->shiftStringEx();
+        $stName = $args->shiftHostnameEx();
         $args->end();
         $stURL = $this->cli()->loadOrderURLEx( $stName );
         $order = $this->client->order( $stURL );
@@ -31,15 +31,15 @@ class CommandCertificate extends Command {
             $this->error( 'Certificate not available.' );
             return;
         }
-        $rCert = $this->client->certificate( $order );
+        $stCertificate = $this->client->certificate( $order );
         $stCertFile = $this->cli()->cfgGet( 'certs-dir' ) . '/' . $stName . '.crt';
         if ( file_exists( $stCertFile ) ) {
             echo "Certificate already exists.\n";
         } else {
-            OK::file_put_contents( $stCertFile, $rCert );
+            IOHelper::writeFile( $stCertFile, $stCertificate, 0644, true );
             echo "Wrote certificate to {$stCertFile}.\n";
         }
-        echo $rCert, "\n";
+        echo $stCertificate, "\n";
     }
 
 

@@ -126,11 +126,7 @@ class Interpreter extends \JDWX\CLI\Interpreter {
         if ( ! file_exists( $this->stOrderStatePath ) ) {
             return [];
         }
-        $bst = file_get_contents( $this->stOrderStatePath );
-        if ( ! is_string( $bst ) || '' === $bst ) {
-            throw new RuntimeException( "Failed to read order state file {$this->stOrderStatePath}" );
-        }
-        return Json::decodeStringMap( $bst );
+        return Json::decodeStringMap( IOHelper::readFile( $this->stOrderStatePath ) );
     }
 
 
@@ -141,7 +137,7 @@ class Interpreter extends \JDWX\CLI\Interpreter {
         foreach ( $i_rNames as $stName ) {
             $r[ $stName ] = $i_stURL;
         }
-        OK::file_put_contents( $this->stOrderStatePath, Json::encode( $r ) );
+        IOHelper::writeFile( $this->stOrderStatePath, Json::encode( $r ), 0600, true );
     }
 
 
