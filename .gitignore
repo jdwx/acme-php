@@ -1,6 +1,7 @@
 /.idea
 /composer.lock
 /vendor
+*.bak
 *.pem
 *.ini
 
