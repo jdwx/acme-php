@@ -8,8 +8,10 @@ namespace JDWX\ACME\Commands;
 
 
 use JDWX\ACME\Command;
+use JDWX\ACME\Exceptions\RuntimeException;
 use JDWX\ACME\IOHelper;
 use JDWX\Args\Arguments;
+use JDWX\Param\Validate;
 
 
 class CommandCertificate extends Command {
@@ -23,7 +25,14 @@ class CommandCertificate extends Command {
 
 
     protected function run( Arguments $args ) : void {
-        $stName = $args->shiftHostnameEx();
+        $stName = $args->shiftStringEx();
+        $stValidateName = $stName;
+        if ( str_starts_with( $stName, '*.' ) ) {
+            $stValidateName = 'example.' . substr( $stName, 2 );
+        }
+        if ( ! Validate::hostname( $stValidateName ) ) {
+            throw new RuntimeException( "Invalid hostname: {$stName}" );
+        }
         $args->end();
         $stURL = $this->cli()->loadOrderURLEx( $stName );
         $order = $this->client->order( $stURL );
