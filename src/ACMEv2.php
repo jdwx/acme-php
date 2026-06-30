@@ -66,7 +66,7 @@ final class ACMEv2 {
 
 
     public function __construct( private readonly string $stDirectoryURL,
-                                 ?HttpClientInterface     $i_client = null ) {
+                                 ?HttpClientInterface    $i_client = null ) {
         $this->client = $i_client ?? HttpClient::withGuzzle( '' );
     }
 
@@ -107,6 +107,15 @@ final class ACMEv2 {
 
     public static function production() : ACMEv2 {
         return new ACMEv2( self::LE_PRODUCTION_URL );
+    }
+
+
+    public static function revocationReasonCodeToString( int $i_uReason ) : string {
+        $bst = array_search( $i_uReason, self::REVOCATION_REASONS );
+        if ( is_string( $bst ) ) {
+            return $bst;
+        }
+        throw new InvalidArgumentException( "Unknown revocation reason: {$i_uReason}" );
     }
 
 
