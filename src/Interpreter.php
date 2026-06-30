@@ -7,13 +7,13 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
-use Exception;
 use JDWX\ACME\Exceptions\RuntimeException;
-use JDWX\Args\MissingArgumentException;
+use JDWX\Args\Exceptions\MissingArgumentException;
 use JDWX\Config\ConfigDB;
 use JDWX\Json\Json;
 use JDWX\Param\IParameter;
 use JDWX\Strict\OK;
+use Throwable;
 
 
 class Interpreter extends \JDWX\CLI\Interpreter {
@@ -141,13 +141,16 @@ class Interpreter extends \JDWX\CLI\Interpreter {
     }
 
 
-    protected function handleException( Exception $i_ex ) : ?int {
+    /** @noinspection PhpMissingParentCallCommonInspection */
+    protected function handleException( Throwable $i_ex ) : ?int {
         $this->error( strval( $i_ex ) );
         return 10;
     }
 
 
-    /** @param list<string>|null $i_argv */
+    /** @param list<string>|null $i_argv
+     * @noinspection PhpMissingParentCallCommonInspection
+     */
     protected function newArguments( ?array $i_argv ) : Arguments {
         global $argv;
         return new Arguments( $this, $i_argv ?? $argv );

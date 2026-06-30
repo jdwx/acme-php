@@ -7,7 +7,7 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
-use JDWX\Args\MissingArgumentException;
+use JDWX\Args\Exceptions\MissingArgumentException;
 
 
 class Arguments extends \JDWX\Args\Arguments {

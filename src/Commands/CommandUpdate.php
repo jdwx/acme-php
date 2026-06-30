@@ -15,11 +15,11 @@ use JDWX\Json\Json;
 class CommandUpdate extends Command {
 
 
-    protected const COMMAND = 'update';
+    protected const string COMMAND = 'update';
 
-    protected const HELP    = 'Update email address on current account.';
+    protected const string HELP    = 'Update email address on current account.';
 
-    protected const USAGE   = 'update <email-address>';
+    protected const string USAGE   = 'update <email-address>';
 
 
     protected function run( Arguments $args ) : void {

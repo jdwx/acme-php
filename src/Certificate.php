@@ -338,7 +338,7 @@ EOL;
 
 
     /**
-     * @param string $i_stCheckName
+     * @param string              $i_stCheckName
      * @param list<string>|string $i_rCertificateNames
      * @return bool
      */
@@ -367,8 +367,8 @@ EOL;
 
 
     /**
-     * @param string $i_stText The input string.
-     * @param string|null $i_nstCN The CN to match, if desired.
+     * @param string      $i_stText The input string.
+     * @param string|null $i_nstCN  The CN to match, if desired.
      * @return list<OpenSSLCertificate> All the (matching) certificates in the input string.
      *
      * This is useful for parsing a certificate chain.
@@ -503,6 +503,7 @@ EOL;
     public static function writeCSR( string $i_stFileName, string $i_csr ) : void {
         $stCSR = '';
         openssl_csr_export( $i_csr, $stCSR );
+        assert( is_string( $stCSR ) );
         IOHelper::writeFile( $i_stFileName, $stCSR, 0600, true );
     }
 
