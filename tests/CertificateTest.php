@@ -4,10 +4,18 @@
 declare( strict_types = 1 );
 
 
+namespace JDWX\ACME\Tests;
+
+
 use JDWX\ACME\Certificate;
+use JDWX\ACME\Exceptions\RuntimeException;
 use JDWX\ACME\KeyType;
+use OpenSSLAsymmetricKey;
+use OpenSSLCertificate;
+use OpenSSLCertificateSigningRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 
 #[CoversClass( Certificate::class )]
@@ -153,7 +161,8 @@ final class CertificateTest extends TestCase {
     }
 
 
-    protected function setup() : void {
+    protected function setUp() : void {
+        parent::setUp();
         $x = $this->makeSelfSignedCert();
         $this->caKey = $x->key;
         $this->caCrt = $x->crt;

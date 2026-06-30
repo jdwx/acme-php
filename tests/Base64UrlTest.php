@@ -4,11 +4,16 @@
 declare( strict_types = 1 );
 
 
+namespace JDWX\ACME\Tests;
+
+
 use JDWX\ACME\Base64Url;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
 
-class Base64UrlTest extends TestCase {
+#[CoversClass( Base64Url::class )]
+final class Base64UrlTest extends TestCase {
 
 
     public function testEncode() : void {
