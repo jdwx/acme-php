@@ -12,6 +12,7 @@ use JDWX\JsonApiClient\Response;
 use JDWX\Result\Result;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
+use OpenSSLCertificate;
 use RuntimeException;
 
 
@@ -21,7 +22,12 @@ class Client {
     private ?string $kid = null;
 
 
-    public function __construct( private JWK $jwk, private readonly ACMEv2 $acme ) {}
+    /**
+     * The account key may be null when the client is used only for
+     * certificate-key revocation (RFC 8555 §7.6), which needs no ACME account.
+     * Operations that require an account key throw if it is missing.
+     */
+    public function __construct( private ?JWK $jwk, private readonly ACMEv2 $acme ) {}
 
 
     /** @return mixed[] */
@@ -132,7 +138,7 @@ class Client {
 
 
     public function keyAuthorization( string $i_stToken ) : string {
-        return $i_stToken . '.' . $this->jwk->thumbprint( 'sha256' );
+        return $i_stToken . '.' . $this->jwkEx()->thumbprint( 'sha256' );
 
     }
 
@@ -151,7 +157,7 @@ class Client {
         $stURL = $this->acme->getEndpoint( 'keyChange' );
         $rInner = [
             'account' => $this->kid(),
-            'oldKey' => $this->jwk->toPublic()->jsonSerialize(),
+            'oldKey' => $this->jwkEx()->toPublic()->jsonSerialize(),
         ];
         # The inner JWS is signed with the new key, has no nonce, and uses a
         # "jwk" header (not "kid") so the server can learn the new public key.
@@ -225,18 +231,43 @@ class Client {
      * it null to sign with the account key.
      */
     public function revoke( Order $i_order, int $i_uReason = 0, ?string $i_nstSigningKey = null ) : Response {
-        $stURL = $this->acme->getEndpoint( 'revokeCert' );
         $cert = $this->certificate( $i_order );
         $rCerts = Certificate::parseChain( $cert, $i_order->getNames()[ 0 ] );
         if ( 1 !== count( $rCerts ) ) {
             throw new RuntimeException( 'Did not parse one matching certificate.' );
         }
-        $st = Certificate::toBase64Url( $rCerts[ 0 ] );
+        return $this->revokeCert( $rCerts[ 0 ], $i_uReason, $i_nstSigningKey );
+    }
+
+
+    /**
+     * Revoke a certificate given its PEM, without needing the issuing order
+     * (RFC 8555 §7.6). This is the path to use when only the certificate and
+     * its key survive. The end-entity certificate is taken to be the first in
+     * the PEM, as Let's Encrypt returns the leaf ahead of its chain.
+     */
+    public function revokeCertificate( string  $i_stCertPem, int $i_uReason = 0,
+                                       ?string $i_nstSigningKey = null ) : Response {
+        $rCerts = Certificate::parseChain( $i_stCertPem );
+        if ( [] === $rCerts ) {
+            throw new RuntimeException( 'No certificate found in PEM.' );
+        }
+        return $this->revokeCert( $rCerts[ 0 ], $i_uReason, $i_nstSigningKey );
+    }
+
+
+    /**
+     * Build, sign, and send a revocation request for a single certificate.
+     * Signs with the supplied certificate key when given (embedding a "jwk"
+     * header and no "kid"), otherwise with the account key.
+     */
+    private function revokeCert( OpenSSLCertificate $i_cert, int $i_uReason,
+                                 ?string            $i_nstSigningKey ) : Response {
+        $stURL = $this->acme->getEndpoint( 'revokeCert' );
         $rData = [
-            'certificate' => $st,
+            'certificate' => Certificate::toBase64Url( $i_cert ),
             'reason' => $i_uReason,
         ];
-
         if ( is_string( $i_nstSigningKey ) ) {
             $jwkCert = JWKFactory::createFromKey( $i_nstSigningKey );
             return $this->acme->postSigned( $jwkCert, $stURL, $rData );
@@ -294,13 +325,23 @@ class Client {
     }
 
 
+    private function jwkEx() : JWK {
+        if ( ! $this->jwk instanceof JWK ) {
+            throw new RuntimeException(
+                'No account key; this client can only revoke with a certificate key.'
+            );
+        }
+        return $this->jwk;
+    }
+
+
     /**
      * @param string       $i_stURL
      * @param mixed[]|null $i_nrPayload
      * @return Response
      */
     private function postSigned( string $i_stURL, ?array $i_nrPayload = null ) : Response {
-        return $this->acme->postSigned( $this->jwk, $i_stURL, $i_nrPayload, $this->kid() );
+        return $this->acme->postSigned( $this->jwkEx(), $i_stURL, $i_nrPayload, $this->kid() );
     }
 
 
@@ -321,7 +362,7 @@ class Client {
      * @return Response
      */
     private function postSignedNoKid( string $i_stURL, ?array $i_nrPayload = null ) : Response {
-        return $this->acme->postSigned( $this->jwk, $i_stURL, $i_nrPayload );
+        return $this->acme->postSigned( $this->jwkEx(), $i_stURL, $i_nrPayload );
     }
 
 

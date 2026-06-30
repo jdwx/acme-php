@@ -182,6 +182,56 @@ final class ClientTest extends TestCase {
     }
 
 
+    public function testRevokeCertificateFromPemNeedsNoAccount() : void {
+        $cli = new MockClient( null );
+        $cli->queueResponse( self::makeResponse( 200, self::DIRECTORY, [
+            'content-type' => 'application/json',
+            'replay-nonce' => 'nonce-1',
+        ] ) );
+        $cli->queueResponse( self::makeResponse( 200, '', [ 'content-type' => 'application/json' ] ) );
+        $acme = new ACMEv2( 'https://acme.test/directory', $cli );
+
+        # A client with no account key can still revoke straight from a PEM,
+        # signing with the certificate's own key (RFC 8555 §7.6).
+        $client = new Client( null, $acme );
+        [ , $stCertPem, $stKeyPem ] = $this->certifiedOrder();
+
+        $client->revokeCertificate( $stCertPem, 1, $stKeyPem );
+
+        $cli->shiftRequest(); # directory GET
+        $req = $cli->shiftRequestArray(); # revoke POST
+        self::assertSame( 'POST', $req[ 'method' ] );
+        self::assertSame( self::REVOKE_URL, $req[ 'path' ] );
+        $stBody = $req[ 'body' ];
+        self::assertIsString( $stBody );
+
+        $jwkCert = JWKFactory::createFromKey( $stKeyPem );
+        self::assertTrue( JWT::verify( $stBody, $jwkCert->toPublic()->jsonSerialize() ) );
+        $rProtected = Base64Url::decodeJSON( self::str( Json::decodeDict( $stBody )[ 'protected' ] ) );
+        self::assertArrayHasKey( 'jwk', $rProtected );
+        self::assertArrayNotHasKey( 'kid', $rProtected );
+        $rPayload = Base64Url::decodeJSON( self::str( Json::decodeDict( $stBody )[ 'payload' ] ) );
+        self::assertArrayHasKey( 'certificate', $rPayload );
+        self::assertSame( 1, $rPayload[ 'reason' ] );
+    }
+
+
+    public function testRevokeWithoutAccountKeyOrSigningKeyThrows() : void {
+        $cli = new MockClient( null );
+        $cli->queueResponse( self::makeResponse( 200, self::DIRECTORY, [
+            'content-type' => 'application/json',
+            'replay-nonce' => 'nonce-1',
+        ] ) );
+        $acme = new ACMEv2( 'https://acme.test/directory', $cli );
+        $client = new Client( null, $acme );
+        [ , $stCertPem ] = $this->certifiedOrder();
+
+        # No account key and no signing key means there is nothing to sign with.
+        $this->expectException( \RuntimeException::class );
+        $client->revokeCertificate( $stCertPem );
+    }
+
+
     /**
      * Build a "valid" order for revoke.test together with a self-signed
      * certificate (CN via SAN) and the PEM of the key that signed it.

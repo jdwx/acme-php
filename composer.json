@@ -6,7 +6,8 @@
     }
   },
   "bin": [
-    "bin/acme-cli.php"
+    "bin/acme-cli.php",
+    "bin/revoke-cert.php"
   ],
   "require": {
     "php": ">=8.3.0",
