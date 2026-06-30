@@ -57,14 +57,20 @@ final class JWT {
     }
 
 
-    /** @param mixed[]|null $i_nrPayload */
-    public static function sign( JWK    $i_jwk, string $i_stURL, string $i_stNonce,
+    /**
+     * @param mixed[]|null $i_nrPayload
+     *
+     * A null nonce produces a JWS without a "nonce" header parameter. This is
+     * required for the inner JWS of a key-rollover request (RFC 8555 §7.3.5);
+     * ordinary ACME requests must always supply a nonce.
+     */
+    public static function sign( JWK    $i_jwk, string $i_stURL, ?string $i_nstNonce,
                                  ?array $i_nrPayload = null, ?string $i_kid = null ) : string {
-        $rProtected = [
-            'alg' => 'ES384',
-            'nonce' => $i_stNonce,
-            'url' => $i_stURL,
-        ];
+        $rProtected = [ 'alg' => 'ES384' ];
+        if ( is_string( $i_nstNonce ) ) {
+            $rProtected[ 'nonce' ] = $i_nstNonce;
+        }
+        $rProtected[ 'url' ] = $i_stURL;
         if ( is_string( $i_kid ) ) {
             $rProtected[ 'kid' ] = $i_kid;
         } else {
