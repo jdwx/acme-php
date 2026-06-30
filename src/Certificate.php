@@ -230,7 +230,11 @@ subjectAltName = @alt_names
 
 EOL;
         foreach ( $i_rNames as $i => $stName ) {
-            if ( ! Validate::hostname( $stName ) ) {
+            $stValidateName = $stName;
+            if ( str_starts_with( $stName, '*.' ) ) {
+                $stValidateName = 'example.' . substr( $stName, 2 );
+            }
+            if ( ! Validate::hostname( $stValidateName ) ) {
                 throw new RuntimeException( "Invalid hostname: {$stName}" );
             }
             $tempConf .= "DNS.$i = $stName\n";
