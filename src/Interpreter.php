@@ -156,9 +156,9 @@ class Interpreter extends \JDWX\CLI\Interpreter {
     /** @param list<string>|null $i_argv
      * @noinspection PhpMissingParentCallCommonInspection
      */
-    protected function newArguments( ?array $i_argv ) : Arguments {
+    protected function newArguments( ?array $i_argv ) : CliArguments {
         global $argv;
-        return new Arguments( $this, $i_argv ?? $argv );
+        return new CliArguments( $this, $i_argv ?? $argv );
     }
 
 

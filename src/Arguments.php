@@ -1,4 +1,4 @@
-<?php /** @noinspection PhpUnused */
+<?php
 
 
 declare( strict_types = 1 );
@@ -13,9 +13,9 @@ use JDWX\Args\Exceptions\MissingArgumentException;
 class Arguments extends \JDWX\Args\Arguments {
 
 
-    /** @param list<string> $rArgs */
-    public function __construct( private readonly Interpreter $cli, array $rArgs ) {
-        parent::__construct( $rArgs );
+    /** @param iterable<string>|string $i_args */
+    public function __construct( iterable|string $i_args ) {
+        parent::__construct( $i_args );
     }
 
 
@@ -30,24 +30,6 @@ class Arguments extends \JDWX\Args\Arguments {
             return $nstType;
         }
         throw new MissingArgumentException( 'Challenge type required.' );
-    }
-
-
-    public function shiftOrder() : ?Order {
-        $nstName = $this->shiftString();
-        if ( ! is_string( $nstName ) ) {
-            return null;
-        }
-        return $this->cli->loadOrder( $nstName );
-    }
-
-
-    public function shiftOrderEx() : Order {
-        $nOrder = $this->shiftOrder();
-        if ( $nOrder instanceof Order ) {
-            return $nOrder;
-        }
-        throw new MissingArgumentException( 'Order is required' );
     }
 
 

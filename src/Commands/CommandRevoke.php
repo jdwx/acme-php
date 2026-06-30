@@ -7,7 +7,7 @@ declare( strict_types = 1 );
 namespace JDWX\ACME\Commands;
 
 
-use JDWX\ACME\Arguments;
+use JDWX\ACME\CliArguments;
 use JDWX\ACME\Command;
 use JDWX\ACME\Exceptions\InvalidArgumentException;
 use JDWX\Strict\OK;
@@ -23,7 +23,7 @@ class CommandRevoke extends Command {
     protected const string USAGE   = '<certificate-url> <reason> [signing-key-path]';
 
 
-    protected function run( Arguments $args ) : void {
+    protected function run( CliArguments $args ) : void {
         $order = $args->shiftOrderEx();
         $uRevocationCode = $args->shiftRevocationReasonEx();
         $nstSigningKeyPath = $args->shiftExistingFilename();

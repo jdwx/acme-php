@@ -7,7 +7,7 @@ declare( strict_types = 1 );
 namespace JDWX\ACME\Commands;
 
 
-use JDWX\ACME\Arguments;
+use JDWX\ACME\CliArguments;
 use JDWX\ACME\Command;
 use JDWX\Json\Json;
 
@@ -22,7 +22,7 @@ class CommandAuthorizations extends Command {
     protected const string USAGE   = '<hostname>';
 
 
-    protected function run( Arguments $args ) : void {
+    protected function run( CliArguments $args ) : void {
         $order = $args->shiftOrderEx();
         $stName = $order->nameEx();
         $args->end();

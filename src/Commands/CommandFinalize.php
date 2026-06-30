@@ -7,8 +7,8 @@ declare( strict_types = 1 );
 namespace JDWX\ACME\Commands;
 
 
-use JDWX\ACME\Arguments;
 use JDWX\ACME\Certificate;
+use JDWX\ACME\CliArguments;
 use JDWX\ACME\Command;
 use JDWX\ACME\KeyType;
 use JDWX\Json\Json;
@@ -24,7 +24,7 @@ class CommandFinalize extends Command {
     protected const string USAGE   = '<host-name> [ec|rsa]';
 
 
-    protected function run( Arguments $args ) : void {
+    protected function run( CliArguments $args ) : void {
         $order = $args->shiftOrderEx();
         $stName = $order->nameEx();
         $stType = $args->shiftKeyword( [ 'ec', 'rsa' ] ) ?? 'ec';

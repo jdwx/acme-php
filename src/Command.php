@@ -17,14 +17,20 @@ abstract class Command extends AbstractCommand {
     protected Client $client;
 
 
+    public function runOuter( \JDWX\Args\Arguments $args ) : void {
+        $this->client = $this->cli()->client();
+        parent::runOuter( $args );
+    }
+
+
     /** @param string ...$args */
-    protected function cfgGet( ... $args ) : IParameter {
+    protected function cfgGet( ...$args ) : IParameter {
         return $this->cli()->cfgGet( ... $args );
     }
 
 
     /** @param string ...$args */
-    protected function cfgHas( ... $args ) : bool {
+    protected function cfgHas( ...$args ) : bool {
         return $this->cli()->cfgHas( ... $args );
     }
 
@@ -36,13 +42,7 @@ abstract class Command extends AbstractCommand {
     }
 
 
-    abstract protected function run( Arguments $args ) : void;
-
-
-    public function runOuter( \JDWX\Args\Arguments $args ) : void {
-        $this->client = $this->cli()->client();
-        parent::runOuter( $args );
-    }
+    abstract protected function run( CliArguments $args ) : void;
 
 
 }
