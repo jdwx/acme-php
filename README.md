@@ -25,6 +25,21 @@ The module is quite complicated and usable documentation hasn't been developed y
 A command-line utility is provided in
 `bin/acme-cli.php` which can be used to perform common operations like registering an account, creating orders, completing challenges, and downloading certificates.
 
+## Help! I need to revoke a Let's Encrypt certificate in a big hurry!
+
+```
+$ git clone https://github.com/jdwx/acme-php.git
+$ cd acme-php
+$ composer update
+$ bin/revoke-cert.php path/to/cert.crt path/to/key.key keycompromise
+Revoking certificate:
+  subject:   your.cert.name
+  reason:    keycompromise (1)
+  directory: https://acme-v02.api.letsencrypt.org/directory
+Are you sure? yes
+Revoked successfully.
+```
+
 ## Stability
 
 This module has supported the issuance of hundreds of thousands of certificates in production. There are now two independent practical implementations of ACMEv2 certificate issuance based on this module in production use.

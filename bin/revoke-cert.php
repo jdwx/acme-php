@@ -6,6 +6,7 @@ declare( strict_types = 1 );
 
 
 use JDWX\ACME\ACMEv2;
+use JDWX\ACME\Arguments;
 use JDWX\ACME\Certificate;
 use JDWX\ACME\Client;
 use JDWX\ACME\Exceptions\AlreadyRevokedException;
@@ -35,16 +36,11 @@ require $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
                     . 'Reasons: ' . implode( ', ', array_keys( ACMEv2::REVOCATION_REASONS ) )
             );
         }
-        $stCertPem = $this->args()->shiftExistingFileBodyEx();
-        $stKeyPem = $this->args()->shiftExistingFileBodyEx();
+        $stCertPem = $this->args()->shiftExistingFileBodyEx( i_nstRequired: 'Certificate path is required.' );
+        $stKeyPem = $this->args()->shiftExistingFileBodyEx( i_nstRequired: 'Private key path is required.' );
+        $uReason = $this->args()->shiftRevocationReason() ?? 0;
+        $stReason = ACMEv2::revocationReasonCodeToString( $uReason );
         $this->args()->end();
-        $stReason = 'keyCompromise';
-
-        try {
-            $uReason = ACMEv2::revocationReasonStringToCode( $stReason );
-        } catch ( Throwable $e ) {
-            $this->fail( $e->getMessage() );
-        }
 
         $rCerts = Certificate::parseChain( $stCertPem );
         if ( [] === $rCerts ) {
@@ -82,9 +78,22 @@ require $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
     }
 
 
+    public function args() : Arguments {
+        $args = parent::args();
+        assert( $args instanceof Arguments );
+        return $args;
+    }
+
+
     private function fail( string $i_stMessage ) : never {
         fwrite( STDERR, $i_stMessage . "\n" );
         exit( 1 );
+    }
+
+
+    /** @noinspection PhpMissingParentCallCommonInspection */
+    protected function newArguments( array $i_argv ) : Arguments {
+        return new Arguments( $i_argv );
     }
 
 
