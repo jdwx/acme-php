@@ -60,4 +60,16 @@ class Arguments extends \JDWX\Args\Arguments {
     }
 
 
+    public function shiftRevocationReasonEx() : int {
+        $nstReason = $this->shiftRevocationReason();
+        if ( is_int( $nstReason ) ) {
+            return $nstReason;
+        }
+        throw new MissingArgumentException(
+            'Revocation reason is required: '
+            . implode( ', ', array_keys( ACMEv2::REVOCATION_REASONS ) )
+        );
+    }
+
+
 }
