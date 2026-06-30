@@ -7,11 +7,11 @@ declare( strict_types = 1 );
 namespace JDWX\ACME;
 
 
+use JDWX\ACME\Exceptions\RuntimeException;
 use JDWX\Param\Validate;
 use OpenSSLAsymmetricKey;
 use OpenSSLCertificate;
 use OpenSSLCertificateSigningRequest;
-use RuntimeException;
 use stdClass;
 
 
