@@ -24,6 +24,10 @@ final class IOHelper {
             throw new RuntimeException( "Failed to acquire shared lock on keyfile {$i_stFileName}" );
         }
         $st = stream_get_contents( $f );
+        if ( $st === false ) {
+            fclose( $f );
+            throw new RuntimeException( "Failed to read keyfile {$i_stFileName}" );
+        }
         if ( ! fclose( $f ) ) {
             throw new RuntimeException( "Failed to close keyfile {$i_stFileName}" );
         }
@@ -32,7 +36,7 @@ final class IOHelper {
 
 
     /** @noinspection PhpUsageOfSilenceOperatorInspection */
-    public static function writeFile( string $i_stFileName, string $i_stData, int $i_uMask,
+    public static function writeFile( string $i_stFileName, string $i_stData, int $i_uMode,
                                       bool   $i_bAllowOverwrite = false ) : void {
         if ( file_exists( $i_stFileName ) || is_link( $i_stFileName ) ) {
             if ( ! $i_bAllowOverwrite ) {
@@ -41,13 +45,13 @@ final class IOHelper {
             @unlink( $i_stFileName );
         }
 
-        $uOldUmask = umask( 0777 - $i_uMask );
+        $uOldUmask = umask( 0777 - $i_uMode );
         try {
             $f = @fopen( $i_stFileName, 'xb' );
             if ( $f === false ) {
                 throw new RuntimeException( "Failed to open file for write {$i_stFileName}" );
             }
-            chmod( $i_stFileName, $i_uMask ); # Belt and suspenders.
+            chmod( $i_stFileName, $i_uMode ); # Belt and suspenders.
             if ( ! @flock( $f, LOCK_EX ) ) {
                 fclose( $f );
                 @unlink( $i_stFileName );
@@ -63,6 +67,11 @@ final class IOHelper {
             fclose( $f );
             @unlink( $i_stFileName );
             throw new RuntimeException( "Failed to write file {$i_stFileName}" );
+        }
+        if ( ! fflush( $f ) ) {
+            fclose( $f );
+            @unlink( $i_stFileName );
+            throw new RuntimeException( "Failed to flush file {$i_stFileName}" );
         }
         if ( ! fclose( $f ) ) {
             @unlink( $i_stFileName );
