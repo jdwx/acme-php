@@ -18,7 +18,7 @@ class CommandRevoke extends Command {
 
     protected const string HELP    = 'Revoke a certificate.';
 
-    protected const string USAGE   = '<certificate-url>';
+    protected const string USAGE   = '<certificate-url> <reason>';
 
 
     protected function run( Arguments $args ) : void {
