@@ -11,6 +11,7 @@ use JDWX\Json\Json;
 use JDWX\JsonApiClient\Response;
 use JDWX\Result\Result;
 use Jose\Component\Core\JWK;
+use Jose\Component\KeyManagement\JWKFactory;
 use RuntimeException;
 
 
@@ -213,7 +214,17 @@ class Client {
     }
 
 
-    public function revoke( Order $i_order, int $i_uReason = 0 ) : Response {
+    /**
+     * Revoke a certificate (RFC 8555 §7.6).
+     *
+     * A revocation request may be signed with either the account key or the
+     * certificate's own key pair. Pass the PEM of the certificate's private key
+     * as $i_nstSigningKey to sign with that key (its public part is embedded as
+     * a "jwk" header and no "kid" is sent); this is required to prove key
+     * compromise and to revoke a certificate this account did not issue. Leave
+     * it null to sign with the account key.
+     */
+    public function revoke( Order $i_order, int $i_uReason = 0, ?string $i_nstSigningKey = null ) : Response {
         $stURL = $this->acme->getEndpoint( 'revokeCert' );
         $cert = $this->certificate( $i_order );
         $rCerts = Certificate::parseChain( $cert, $i_order->getNames()[ 0 ] );
@@ -226,6 +237,10 @@ class Client {
             'reason' => $i_uReason,
         ];
 
+        if ( is_string( $i_nstSigningKey ) ) {
+            $jwkCert = JWKFactory::createFromKey( $i_nstSigningKey );
+            return $this->acme->postSigned( $jwkCert, $stURL, $rData );
+        }
         return $this->postSigned( $stURL, $rData );
     }
 

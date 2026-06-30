@@ -90,9 +90,13 @@ class Interpreter extends \JDWX\CLI\Interpreter {
 
 
     public function loadOrder( string $i_stName ) : ?Order {
-        $stURL = $this->loadOrderURL( $i_stName );
-        if ( ! is_string( $stURL ) ) {
-            return null;
+        if ( str_starts_with( $i_stName, 'https://' ) ) {
+            $stURL = $i_stName;
+        } else {
+            $stURL = $this->loadOrderURL( $i_stName );
+            if ( ! is_string( $stURL ) ) {
+                return null;
+            }
         }
         return $this->client->order( $stURL, $i_stName );
     }

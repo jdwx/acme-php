@@ -9,13 +9,17 @@ namespace JDWX\ACME\Tests;
 
 use JDWX\ACME\ACMEv2;
 use JDWX\ACME\Base64Url;
+use JDWX\ACME\Certificate;
 use JDWX\ACME\Client;
 use JDWX\ACME\JWT;
+use JDWX\ACME\Order;
 use JDWX\Json\Json;
 use JDWX\JsonApiClient\MockClient;
 use JDWX\JsonApiClient\MockStream;
 use JDWX\JsonApiClient\Response;
 use Jose\Component\Core\JWK;
+use Jose\Component\KeyManagement\JWKFactory;
+use OpenSSLCertificateSigningRequest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -28,10 +32,13 @@ final class ClientTest extends TestCase {
 
     private const string KEY_CHANGE_URL = 'https://acme.test/key-change';
 
+    private const string REVOKE_URL   = 'https://acme.test/revoke-cert';
+
     private const string DIRECTORY    = '{'
         . '"newNonce":"https://acme.test/new-nonce",'
         . '"newAccount":"https://acme.test/new-account",'
-        . '"keyChange":"' . self::KEY_CHANGE_URL . '"'
+        . '"keyChange":"' . self::KEY_CHANGE_URL . '",'
+        . '"revokeCert":"' . self::REVOKE_URL . '"'
         . '}';
 
 
@@ -110,6 +117,91 @@ final class ClientTest extends TestCase {
         $rInnerPayload = Base64Url::decodeJSON( self::str( $rInner[ 'payload' ] ) );
         self::assertSame( self::ACCOUNT_URL, $rInnerPayload[ 'account' ] );
         self::assertSame( $jwkOld->toPublic()->jsonSerialize(), $rInnerPayload[ 'oldKey' ] );
+    }
+
+
+    public function testRevokeWithAccountKeySignsWithKid() : void {
+        [ $client, $cli, $jwkAccount ] = $this->primedClient();
+        [ $order, $stCertPem ] = $this->certifiedOrder();
+        $cli->queueResponse( self::makeResponse( 200, $stCertPem, [
+            'content-type' => 'application/pem-certificate-chain',
+        ] ) );
+        $cli->queueResponse( self::makeResponse( 200, '', [ 'content-type' => 'application/json' ] ) );
+
+        $client->revoke( $order );
+
+        $cli->shiftRequest(); # directory GET
+        $cli->shiftRequest(); # newAccount POST
+        $cli->shiftRequest(); # certificate GET
+        $req = $cli->shiftRequestArray(); # revoke POST
+        self::assertSame( 'POST', $req[ 'method' ] );
+        self::assertSame( self::REVOKE_URL, $req[ 'path' ] );
+        $stBody = $req[ 'body' ];
+        self::assertIsString( $stBody );
+
+        # Default revocation is signed with the account key and identifies the
+        # account by "kid" rather than embedding a "jwk" (RFC 8555 §7.6).
+        self::assertTrue( JWT::verify( $stBody, $jwkAccount->toPublic()->jsonSerialize() ) );
+        $rProtected = Base64Url::decodeJSON( self::str( Json::decodeDict( $stBody )[ 'protected' ] ) );
+        self::assertSame( self::ACCOUNT_URL, $rProtected[ 'kid' ] );
+        self::assertArrayNotHasKey( 'jwk', $rProtected );
+        $rPayload = Base64Url::decodeJSON( self::str( Json::decodeDict( $stBody )[ 'payload' ] ) );
+        self::assertArrayHasKey( 'certificate', $rPayload );
+        self::assertSame( 0, $rPayload[ 'reason' ] );
+    }
+
+
+    public function testRevokeWithCertificateKeySignsWithJwk() : void {
+        [ $client, $cli, $jwkAccount ] = $this->primedClient();
+        [ $order, $stCertPem, $stKeyPem ] = $this->certifiedOrder();
+        $cli->queueResponse( self::makeResponse( 200, $stCertPem, [
+            'content-type' => 'application/pem-certificate-chain',
+        ] ) );
+        $cli->queueResponse( self::makeResponse( 200, '', [ 'content-type' => 'application/json' ] ) );
+
+        # Revoke for key compromise, signing with the certificate's own key.
+        $client->revoke( $order, 1, $stKeyPem );
+
+        $cli->shiftRequest(); # directory GET
+        $cli->shiftRequest(); # newAccount POST
+        $cli->shiftRequest(); # certificate GET
+        $req = $cli->shiftRequestArray(); # revoke POST
+        $stBody = $req[ 'body' ];
+        self::assertIsString( $stBody );
+
+        # The request must be signed with the certificate key and embed it as a
+        # "jwk" header, never the account key nor a "kid" (RFC 8555 §7.6).
+        $jwkCert = JWKFactory::createFromKey( $stKeyPem );
+        self::assertTrue( JWT::verify( $stBody, $jwkCert->toPublic()->jsonSerialize() ) );
+        self::assertFalse( JWT::verify( $stBody, $jwkAccount->toPublic()->jsonSerialize() ) );
+        $rProtected = Base64Url::decodeJSON( self::str( Json::decodeDict( $stBody )[ 'protected' ] ) );
+        self::assertArrayHasKey( 'jwk', $rProtected );
+        self::assertArrayNotHasKey( 'kid', $rProtected );
+        $rPayload = Base64Url::decodeJSON( self::str( Json::decodeDict( $stBody )[ 'payload' ] ) );
+        self::assertSame( 1, $rPayload[ 'reason' ] );
+    }
+
+
+    /**
+     * Build a "valid" order for revoke.test together with a self-signed
+     * certificate (CN via SAN) and the PEM of the key that signed it.
+     *
+     * @return array{Order, string, string} [ order, certificate PEM, key PEM ]
+     */
+    private function certifiedOrder() : array {
+        # Put the name in the subject CN rather than a SAN: openssl_csr_sign()
+        # does not copy CSR extensions, so a SAN would be dropped and the
+        # certificate would carry no name for parseChain() to match.
+        $key = Certificate::makeKeyEC();
+        $csr = openssl_csr_new( [ 'commonName' => 'revoke.test' ], $key, [ 'digest_alg' => 'sha384' ] );
+        self::assertInstanceOf( OpenSSLCertificateSigningRequest::class, $csr );
+        $crt = Certificate::signCSR( $key, $csr, 2 );
+        $order = new Order( [
+            'status' => 'valid',
+            'identifiers' => [ [ 'type' => 'dns', 'value' => 'revoke.test' ] ],
+            'certificate' => 'https://acme.test/cert/1',
+        ], 'revoke.test' );
+        return [ $order, Certificate::toString( $crt ), Certificate::keyToString( $key ) ];
     }
 
 

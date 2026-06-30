@@ -9,6 +9,8 @@ namespace JDWX\ACME\Commands;
 
 use JDWX\ACME\Arguments;
 use JDWX\ACME\Command;
+use JDWX\ACME\Exceptions\InvalidArgumentException;
+use JDWX\Strict\OK;
 
 
 class CommandRevoke extends Command {
@@ -18,14 +20,22 @@ class CommandRevoke extends Command {
 
     protected const string HELP    = 'Revoke a certificate.';
 
-    protected const string USAGE   = '<certificate-url> <reason>';
+    protected const string USAGE   = '<certificate-url> <reason> [signing-key-path]';
 
 
     protected function run( Arguments $args ) : void {
         $order = $args->shiftOrderEx();
-        $uRevocationCode = $args->shiftRevocationReason() ?? 0;
+        $uRevocationCode = $args->shiftRevocationReasonEx();
+        $nstSigningKeyPath = $args->shiftExistingFilename();
+        if ( 1 === $uRevocationCode && ! is_string( $nstSigningKeyPath ) ) {
+            $nstSigningKeyPath = $this->cfgGet( 'certs-dir' )->asString() . '/' . $order->nameEx() . '.key';
+            if ( ! file_exists( $nstSigningKeyPath ) ) {
+                throw new InvalidArgumentException( 'Signing key is required for compromised key revocation.' );
+            }
+        }
+        $nstSigningKey = is_string( $nstSigningKeyPath ) ? OK::file_get_contents( $nstSigningKeyPath ) : null;
         $args->end();
-        $rsp = $this->client->revoke( $order, $uRevocationCode );
+        $rsp = $this->client->revoke( $order, $uRevocationCode, $nstSigningKey );
         echo $rsp->__toString(), "\n";
     }
 
