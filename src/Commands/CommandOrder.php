@@ -30,6 +30,8 @@ class CommandOrder extends Command {
             $this->error( "Order not found: {$stName}" );
             return;
         }
+        echo "Name: {$stName}\n";
+        echo "Order URL: {$nstURL}\n";
         $r = $this->client->order( $nstURL );
         echo Json::encodePretty( $r ), "\n";
     }
