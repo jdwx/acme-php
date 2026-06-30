@@ -18,7 +18,7 @@ class CommandNewAccount extends Command {
 
     protected const string HELP    = 'Create a new ACME account';
 
-    protected const string USAGE   = 'new account [contact-email]';
+    protected const string USAGE   = '[contact-email]';
 
 
     protected function run( Arguments $args ) : void {

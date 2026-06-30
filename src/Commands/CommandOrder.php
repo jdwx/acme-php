@@ -19,7 +19,7 @@ class CommandOrder extends Command {
 
     protected const string HELP    = 'Get order details for a hostname.';
 
-    protected const string USAGE   = 'order <hostname>';
+    protected const string USAGE   = '<hostname>';
 
 
     protected function run( Arguments $args ) : void {

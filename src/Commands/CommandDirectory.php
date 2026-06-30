@@ -19,6 +19,8 @@ class CommandDirectory extends Command {
 
     protected const string HELP    = 'Show the ACME directory';
 
+    protected const string USAGE   = '';
+
 
     /** @param mixed[] $i_r */
     private static function show( array $i_r, int $i_uOffset ) : void {

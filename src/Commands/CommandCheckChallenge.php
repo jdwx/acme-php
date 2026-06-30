@@ -19,7 +19,7 @@ class CommandCheckChallenge extends Command {
 
     protected const string HELP    = 'Check a challenge.';
 
-    protected const string USAGE   = 'check challenge <hostname> <type>';
+    protected const string USAGE   = '<hostname> <type>';
 
 
     protected function run( Arguments $args ) : void {

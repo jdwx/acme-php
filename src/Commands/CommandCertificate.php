@@ -21,7 +21,7 @@ class CommandCertificate extends Command {
 
     protected const string HELP    = 'Fetch a certificate.';
 
-    protected const string USAGE   = 'certificate <hostname>';
+    protected const string USAGE   = '<hostname>';
 
 
     protected function run( Arguments $args ) : void {

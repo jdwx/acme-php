@@ -19,7 +19,7 @@ class CommandValidate extends Command {
 
     protected const string HELP    = 'Validate a challenge.';
 
-    protected const string USAGE   = 'validate <host-name> <type>';
+    protected const string USAGE   = '<host-name> <type>';
 
 
     protected function run( Arguments $args ) : void {

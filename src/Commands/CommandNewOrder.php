@@ -19,7 +19,7 @@ class CommandNewOrder extends Command {
 
     protected const string HELP    = 'Create a new order';
 
-    protected const string USAGE   = 'new order <domain-name...>';
+    protected const string USAGE   = '<domain-name...>';
 
 
     protected function run( Arguments $args ) : void {

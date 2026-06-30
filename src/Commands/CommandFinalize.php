@@ -21,7 +21,7 @@ class CommandFinalize extends Command {
 
     protected const string HELP    = 'Finalize an order.';
 
-    protected const string USAGE   = 'finalize <host-name> [ec|rsa]';
+    protected const string USAGE   = '<host-name> [ec|rsa]';
 
 
     protected function run( Arguments $args ) : void {

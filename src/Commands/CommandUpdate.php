@@ -19,7 +19,7 @@ class CommandUpdate extends Command {
 
     protected const string HELP    = 'Update email address on current account.';
 
-    protected const string USAGE   = 'update <email-address>';
+    protected const string USAGE   = '<email-address>';
 
 
     protected function run( Arguments $args ) : void {

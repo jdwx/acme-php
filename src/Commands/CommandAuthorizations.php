@@ -19,7 +19,7 @@ class CommandAuthorizations extends Command {
 
     protected const string HELP    = 'List the authorizations for a hostname.';
 
-    protected const string USAGE   = 'authorizations <hostname>';
+    protected const string USAGE   = '<hostname>';
 
 
     protected function run( Arguments $args ) : void {

@@ -19,7 +19,7 @@ class CommandAccount extends Command {
 
     protected const string HELP    = 'Set current account by URL.';
 
-    protected const string USAGE   = 'account <account-url...>';
+    protected const string USAGE   = '<account-url...>';
 
 
     protected function run( Arguments $args ) : void {
