@@ -23,6 +23,7 @@ use JDWX\ACME\Exceptions\ServerInternalException;
 use JDWX\ACME\Exceptions\UnauthorizedException;
 use JDWX\Json\Json;
 use JDWX\JsonApiClient\HttpClient;
+use JDWX\JsonApiClient\HttpClientInterface;
 use JDWX\JsonApiClient\Response;
 use Jose\Component\Core\JWK;
 
@@ -61,11 +62,12 @@ final class ACMEv2 {
     /** @var mixed[]|null */
     private ?array $nrDirectory = null;
 
-    private HttpClient $client;
+    private HttpClientInterface $client;
 
 
-    public function __construct( private readonly string $stDirectoryURL ) {
-        $this->client = HttpClient::withGuzzle( '' );
+    public function __construct( private readonly string $stDirectoryURL,
+                                 ?HttpClientInterface     $i_client = null ) {
+        $this->client = $i_client ?? HttpClient::withGuzzle( '' );
     }
 
 
