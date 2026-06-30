@@ -263,7 +263,7 @@ class Client {
      * @return Response
      */
     private function postSigned( string $i_stURL, ?array $i_nrPayload = null ) : Response {
-        return $this->acme->postSigned( $this->jwk, $i_stURL, $i_nrPayload, $this->kid );
+        return $this->acme->postSigned( $this->jwk, $i_stURL, $i_nrPayload, $this->kid() );
     }
 
 
