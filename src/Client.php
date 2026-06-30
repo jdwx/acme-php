@@ -20,7 +20,7 @@ class Client {
     private ?string $kid = null;
 
 
-    public function __construct( private readonly JWK $jwk, private readonly ACMEv2 $acme ) {}
+    public function __construct( private JWK $jwk, private readonly ACMEv2 $acme ) {}
 
 
     /** @return mixed[] */
@@ -141,6 +141,28 @@ class Client {
     }
 
 
+    /**
+     * Roll over the account key to a new key (RFC 8555 §7.3.5).
+     *
+     * @return mixed[]
+     */
+    public function keyChange( JWK $i_jwkNew ) : array {
+        $stURL = $this->acme->getEndpoint( 'keyChange' );
+        $rInner = [
+            'account' => $this->kid(),
+            'oldKey' => $this->jwk->toPublic()->jsonSerialize(),
+        ];
+        # The inner JWS is signed with the new key, has no nonce, and uses a
+        # "jwk" header (not "kid") so the server can learn the new public key.
+        $stInner = JWT::sign( $i_jwkNew, $stURL, null, $rInner );
+        # The outer JWS is signed with the current key. Its payload is the
+        # inner JWS object.
+        $rsp = $this->postSigned( $stURL, Json::decodeDict( $stInner ) );
+        $this->jwk = $i_jwkNew;
+        return ACMEv2::grabBodyJSON( $rsp );
+    }
+
+
     public function newAccount( string $i_stContact ) : string {
         $stURL = $this->acme->getEndpoint( 'newAccount' );
         $rData = [
@@ -258,7 +280,7 @@ class Client {
 
 
     /**
-     * @param string $i_stURL
+     * @param string       $i_stURL
      * @param mixed[]|null $i_nrPayload
      * @return Response
      */
@@ -268,7 +290,7 @@ class Client {
 
 
     /**
-     * @param string $i_stURL
+     * @param string       $i_stURL
      * @param mixed[]|null $i_nrPayload
      * @return array<string, mixed>
      */
@@ -279,7 +301,7 @@ class Client {
 
 
     /**
-     * @param string $i_stURL
+     * @param string       $i_stURL
      * @param mixed[]|null $i_nrPayload
      * @return Response
      */
