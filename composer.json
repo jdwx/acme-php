@@ -15,7 +15,7 @@
     "ext-openssl": "*",
     "jdwx/cli": "^1.0",
     "jdwx/config": "^1.0",
-    "jdwx/json-api-client": "^1.0",
+    "jdwx/json-api-client": "^1.2",
     "jdwx/param": "^1.0",
     "jdwx/result": "^v1.0",
     "jdwx/strict": "^1.0.23",
